@@ -1,10 +1,10 @@
 # CustomerChurn
 This report outlines the requested analysis from Southeast Airlines who has asked our team (Group 2) to perform data analytical analysis to lower their customer churn or in simple terms – help reduce customer attrition. Up until today Southeast airlines has been dependent on a robust loyalty or frequent flyer program in order to reduce customer attrition. However, Southeast Airlines has grown curious as to whether this is truly the case due to recent studies, such as, the International Air Transport Association (IATA) study which stated that “airlines carry $12B in “loyalty debt” and frequent flier mileage and points are slowly devaluing, while the overall balance (or debt) is increasing.” [1]
 Therefore, Southeast Airlines has tasked Group 2 to study past records of their airline and partner airlines in order to proactively reduce churn by cutting off the head of the snake (so-to-speak) by getting in front of potential future customer loss by finding instances of significant indicators, or metrics, to aid in keeping customers. By identifying said metrics Southeast Airlines could use this knowledge to know when a customer was about to stop flying Southeast and try and prevent it. The analysis that will take place in this report will highlight suggestions as to how to avoid having the customers leave and go to another airline. In thinking about customer churn, several key facts are relevant:
-1. As stated above the overall goal that Southeast Airlines wished for group 2 to provide actionable insight, based on the data available.
-2. In order to provide the requested actionable insight based on the data available the business questions that must be answered for this project are:
-a. How do we improve the Net Promoter Score for Southeast Airlines?
-b. Which attributes from the data are most interesting when considering NPS?
-c. What are the traits of customers who are most likely to give detractor scores when asked about likelihood to recommend?
-i. Which group is most likely to give passive scores?
-d. Which attributes are most important to promotor, passive, and detractor customers and how do they impact the likelihood to recommend score?
+
+In order to provide the requested actionable insight based on the data available the business questions that must be answered for this project are:
+1. How do we improve the Net Promoter Score for Southeast Airlines?
+2. Which attributes from the data are most interesting when considering NPS?
+3. What are the traits of customers who are most likely to give detractor scores when asked about likelihood to recommend?
+4. Which group is most likely to give passive scores?
+5. Which attributes are most important to promotor, passive, and detractor customers and how do they impact the likelihood to recommend score?
