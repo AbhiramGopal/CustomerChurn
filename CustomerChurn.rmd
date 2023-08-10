@@ -5,11 +5,11 @@ date: "2023-08-09"
 ---
 
 AIRLINE CUSTOMER CHURN ANALYSIS
-The following dataset was taken from kaggle. The objective of this exercise is 
-1. Find out reasons for customer churn
-2. Recommendations & Business insights to combat customer churn
 
-Utilising the below cell block to import necessary library and packages
+The following dataset was taken from kaggle. The objective of this exercise is 
+
+1. Find out reasons for customer churn
+
 
 ```{r setup, include=FALSE}
 ## Importing packages & dataset
@@ -18,6 +18,7 @@ library(stringr)
 library(tidyverse)
 library(skimr)
 library(ggplot2)
+library(caret)
 
 flight_data<-read.csv("airline_passenger_satisfaction.csv")
 print(head(flight_data))
@@ -29,14 +30,13 @@ print(head(flight_data))
 
 
 ```{r cars}
-summary(flight_data)
-#skim(flight_data)
+# summary(flight_data)
+skim(flight_data)
 ```
 ```{r}
 # Doing data-coversions
 
 flight_data$Gender <- as.factor(flight_data$Gender)
-flight_data$Customer.Type < -as.factor(flight_data$Customer.Type)
 
 # or
 
@@ -87,8 +87,8 @@ flight_data[duplicates,]
 Checking response column
 
 ```{r pressure, echo=FALSE}
-# table(flight_data$Satisfaction)
-tabyl(flight_data$Satisfaction)
+table(flight_data$Satisfaction)
+# tabyl(flight_data$Satisfaction)
 
 ggplot(flight_data, aes(x = Satisfaction)) +
   geom_bar()
@@ -101,6 +101,7 @@ ggplot(flight_data, aes(x = Satisfaction)) +
 k<- flight_data %>%
   group_by(Gender,Satisfaction) %>%
   summarise(count = n())
+print(k)
   
 ggplot(k, aes(x=Gender,y = count,fill = Satisfaction)) + geom_bar(stat = 'identity') +  labs(title = "Stacked Bar Plot of Satisfaction by Gender",
        x = "Gender", y = "Count")
@@ -118,7 +119,6 @@ k/row_sum
 ## First lets understand age distribution
 
 flight_data$Age <- as.numeric(flight_data$Age)
-ggplot(flight_data,aes(x = Age)) +  geom_histogram(binwidth = 10)
 
 ## Majority of Age between 20 to 60. Let us bin age and then plot a 100% stacked to understand satisfaction rates
 
@@ -132,6 +132,9 @@ total_counts <- k1 %>%
   group_by(Age_Binned) %>%
   summarise(total_count = sum(count))
 
+k1_with_total <- left_join(k1, total_counts, by = "Age_Binned")
+print(k1_with_total)
+
 # Filter to keep only unique Age_Binned values
 k1_with_total_unique <- k1_with_total %>%
   select(Age_Binned,Satisfaction,total_count) %>%
@@ -139,7 +142,6 @@ k1_with_total_unique <- k1_with_total %>%
 
 colnames(k1_with_total_unique)[3] <- "count"
 
-k1_with_total <- left_join(k1, total_counts, by = "Age_Binned")
 
 ggplot(k1_with_total,aes(x=Age_Binned,y = count, fill= Satisfaction)) +geom_bar(stat='identity',position = 'Fill') + geom_text(data = k1_with_total_unique, aes(label = count),position = position_fill(vjust = 1.1)) +
 scale_y_continuous(labels = scales::percent_format(scale = 1))
@@ -150,11 +152,9 @@ scale_y_continuous(labels = scales::percent_format(scale = 1))
 
 ```{r}
 
-  # For data splitting
-
-# Assuming you have your data loaded into your_data
-# and your target variable is named 'Class' (replace with your actual column name)
-
+# Convert response into 1 or 0
+table(flight_data$Satisfaction)
+flight_data$Satisfaction <- recode(flight_data$Satisfaction,"Neutral or Dissatisfied"=0,"Satisfied"=1)
 
 # Split data into training and testing sets
 set.seed(123)  # for reproducibility
@@ -172,7 +172,7 @@ summary(logreg_model)
 # Make predictions on the training data
 predictions <- predict(logreg_model, type = "response",newdata = test_data)
 # Convert predictions to binary classes
-predicted_classes <- ifelse(predictions > 0.5, "Satisfied", "Not Satisfied")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
 
 
 # Evaluate the model's performance
@@ -183,6 +183,30 @@ print(paste("Accuracy:", accuracy))
 
 ```
 
+Reasons for customer churn:
+
+1. Class Economy Plus & Economy customers are more likely to be detractor
+2. Personal Type of travel customers are more likely to be detractors
+3. If a customer's departure delay decreases, he is more likely to be promoter
 
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+## Quality Checking the results with contigency tables
+k1 <- table(flight_data$Class,flight_data$Satisfaction)
+print(k1/rowSums(k1))
+
+## 
+k1 <- table(flight_data$Type.of.Travel,flight_data$Satisfaction)
+print(k1/rowSums(k1))
+
+
+flight_data$Departure_Delay_binned <- cut(flight_data$Departure.Delay, breaks = seq(0, 500, by = 50), right = FALSE)
+k1 <- table(flight_data$Departure_Delay_binned,flight_data$Satisfaction)
+k2<- k1[, "1"] / (k1[, "1"] + k1[, "0"])
+print(cbind(k1, satisfaction_rate = k2))
+
+
+
+
+```
+
