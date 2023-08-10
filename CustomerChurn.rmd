@@ -1,0 +1,188 @@
+---
+title: "CustomerChurn"
+output: html_document
+date: "2023-08-09"
+---
+
+AIRLINE CUSTOMER CHURN ANALYSIS
+The following dataset was taken from kaggle. The objective of this exercise is 
+1. Find out reasons for customer churn
+2. Recommendations & Business insights to combat customer churn
+
+Utilising the below cell block to import necessary library and packages
+
+```{r setup, include=FALSE}
+## Importing packages & dataset
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(skimr)
+library(ggplot2)
+
+flight_data<-read.csv("airline_passenger_satisfaction.csv")
+print(head(flight_data))
+
+
+```
+
+
+
+
+```{r cars}
+summary(flight_data)
+#skim(flight_data)
+```
+```{r}
+# Doing data-coversions
+
+flight_data$Gender <- as.factor(flight_data$Gender)
+flight_data$Customer.Type < -as.factor(flight_data$Customer.Type)
+
+# or
+
+# List of column names to convert to factors
+columns_to_convert <- c("Type.of.Travel","Class","Satisfaction")
+
+# Convert the specified columns to factor type
+flight_data[columns_to_convert] <- sapply(flight_data[columns_to_convert], factor)
+
+summary(flight_data)
+
+
+```
+```{r}
+##Finding NAs in our columns
+
+# Find NAs in each column
+nas_in_columns <- sapply(flight_data, function(col) sum(is.na(col)))
+
+# Print the count of NAs in each column
+print(nas_in_columns)
+
+
+```
+```{r}
+##Since only 393, we can go with imputation aswell, but in this case, i decided to remove the NAs
+flight_data <- flight_data[!is.na(flight_data$Arrival.Delay),]
+
+```
+
+
+```{r}
+# Finding duplicates - veryfing the ID column is unique
+length(unique(flight_data$ID))
+
+
+##checking for duplicates ignoring ID column
+duplicates <- flight_data %>%
+  select(-ID) %>%
+  duplicated()
+
+flight_data[duplicates,]
+
+```
+
+## EDA
+
+Checking response column
+
+```{r pressure, echo=FALSE}
+# table(flight_data$Satisfaction)
+tabyl(flight_data$Satisfaction)
+
+ggplot(flight_data, aes(x = Satisfaction)) +
+  geom_bar()
+
+```
+```{r}
+# Doing Bivariate tables & graphs
+## Gender satisfaction
+
+k<- flight_data %>%
+  group_by(Gender,Satisfaction) %>%
+  summarise(count = n())
+  
+ggplot(k, aes(x=Gender,y = count,fill = Satisfaction)) + geom_bar(stat = 'identity') +  labs(title = "Stacked Bar Plot of Satisfaction by Gender",
+       x = "Gender", y = "Count")
+  
+  
+## Getting percentage among rows
+k <- table(flight_data$Gender,flight_data$Satisfaction)
+row_sum <- rowSums(k)
+k/row_sum
+
+## Plotting 
+```
+```{r}
+## How satisfaction changes as per age. 
+## First lets understand age distribution
+
+flight_data$Age <- as.numeric(flight_data$Age)
+ggplot(flight_data,aes(x = Age)) +  geom_histogram(binwidth = 10)
+
+## Majority of Age between 20 to 60. Let us bin age and then plot a 100% stacked to understand satisfaction rates
+
+flight_data$Age_Binned <- cut(flight_data$Age, breaks = seq(0, 100, by = 10), right = FALSE)
+
+k1 <- flight_data %>%
+  group_by(Age_Binned,Satisfaction) %>%
+  summarise(count = n())
+
+total_counts <- k1 %>%
+  group_by(Age_Binned) %>%
+  summarise(total_count = sum(count))
+
+# Filter to keep only unique Age_Binned values
+k1_with_total_unique <- k1_with_total %>%
+  select(Age_Binned,Satisfaction,total_count) %>%
+  distinct(Age_Binned,.keep_all = TRUE) 
+
+colnames(k1_with_total_unique)[3] <- "count"
+
+k1_with_total <- left_join(k1, total_counts, by = "Age_Binned")
+
+ggplot(k1_with_total,aes(x=Age_Binned,y = count, fill= Satisfaction)) +geom_bar(stat='identity',position = 'Fill') + geom_text(data = k1_with_total_unique, aes(label = count),position = position_fill(vjust = 1.1)) +
+scale_y_continuous(labels = scales::percent_format(scale = 1))
+
+
+
+```
+
+```{r}
+
+  # For data splitting
+
+# Assuming you have your data loaded into your_data
+# and your target variable is named 'Class' (replace with your actual column name)
+
+
+# Split data into training and testing sets
+set.seed(123)  # for reproducibility
+trainIndex <- createDataPartition(flight_data$Satisfaction, p = 0.7, list = FALSE)
+train_data <- flight_data[trainIndex, ]
+test_data <- flight_data[-trainIndex, ]
+
+# Train the logistic regression
+logreg_model <- glm(Satisfaction ~ .-ID-Age_Binned, data = train_data, family = "binomial")
+summary(logreg_model)
+
+
+```
+```{r}
+# Make predictions on the training data
+predictions <- predict(logreg_model, type = "response",newdata = test_data)
+# Convert predictions to binary classes
+predicted_classes <- ifelse(predictions > 0.5, "Satisfied", "Not Satisfied")
+
+
+# Evaluate the model's performance
+conf_matrix <- table(predicted_classes, test_data$Satisfaction)
+print(conf_matrix)
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+print(paste("Accuracy:", accuracy))
+
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
